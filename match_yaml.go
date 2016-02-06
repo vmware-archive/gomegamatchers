@@ -18,7 +18,12 @@ type MatchYAMLMatcher struct {
 }
 
 func (matcher *MatchYAMLMatcher) Match(actual interface{}) (success bool, err error) {
-	actualString, expectedString, err := matcher.prettyPrint(actual)
+	actualString, err := matcher.prettyPrint(actual)
+	if err != nil {
+		return false, err
+	}
+
+	expectedString, err := matcher.prettyPrint(matcher.YAMLToMatch)
 	if err != nil {
 		return false, err
 	}
@@ -34,36 +39,30 @@ func (matcher *MatchYAMLMatcher) Match(actual interface{}) (success bool, err er
 }
 
 func (matcher *MatchYAMLMatcher) FailureMessage(actual interface{}) (message string) {
-	actualString, expectedString, _ := matcher.prettyPrint(actual)
+	actualString, _ := matcher.prettyPrint(actual)
+	expectedString, _ := matcher.prettyPrint(matcher.YAMLToMatch)
 	return format.Message(actualString, "to match YAML of", expectedString)
 }
 
 func (matcher *MatchYAMLMatcher) NegatedFailureMessage(actual interface{}) (message string) {
-	actualString, expectedString, _ := matcher.prettyPrint(actual)
+	actualString, _ := matcher.prettyPrint(actual)
+	expectedString, _ := matcher.prettyPrint(matcher.YAMLToMatch)
 	return format.Message(actualString, "not to match YAML of", expectedString)
 }
 
-func (matcher *MatchYAMLMatcher) prettyPrint(actual interface{}) (actualFormatted, expectedFormatted string, err error) {
-	actualString, aok := toString(actual)
-	expectedString, eok := toString(matcher.YAMLToMatch)
-
-	if !(aok && eok) {
-		return "", "", fmt.Errorf("MatchYAMLMatcher matcher requires a string or stringer.  Got:\n%s", format.Object(actual, 1))
+func (matcher *MatchYAMLMatcher) prettyPrint(input interface{}) (formatted string, err error) {
+	inputString, ok := toString(input)
+	if !ok {
+		return "", fmt.Errorf("MatchYAMLMatcher matcher requires a string or stringer.  Got:\n%s", format.Object(input, 1))
 	}
 
-	var adata interface{}
-	if err := candiedyaml.Unmarshal([]byte(actualString), &adata); err != nil {
-		return "", "", err
+	var data interface{}
+	if err := candiedyaml.Unmarshal([]byte(inputString), &data); err != nil {
+		return "", err
 	}
-	abuf, _ := candiedyaml.Marshal(adata)
+	buf, _ := candiedyaml.Marshal(data)
 
-	var edata interface{}
-	if err := candiedyaml.Unmarshal([]byte(expectedString), &edata); err != nil {
-		return "", "", err
-	}
-	ebuf, _ := candiedyaml.Marshal(edata)
-
-	return string(abuf), string(ebuf), nil
+	return string(buf), nil
 }
 
 func toString(a interface{}) (string, bool) {
