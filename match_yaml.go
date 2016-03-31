@@ -2,7 +2,6 @@ package gomegamatchers
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/onsi/gomega/format"
@@ -10,7 +9,9 @@ import (
 )
 
 func MatchYAML(expected interface{}) types.GomegaMatcher {
-	return &MatchYAMLMatcher{expected}
+	return &MatchYAMLMatcher{
+		YAMLToMatch: expected,
+	}
 }
 
 type MatchYAMLMatcher struct {
@@ -18,14 +19,38 @@ type MatchYAMLMatcher struct {
 }
 
 func (matcher *MatchYAMLMatcher) Match(actual interface{}) (success bool, err error) {
-	actualString, err := matcher.prettyPrint(actual)
+	equal, _, err := matcher.equal(matcher.YAMLToMatch, actual)
 	if err != nil {
 		return false, err
 	}
 
-	expectedString, err := matcher.prettyPrint(matcher.YAMLToMatch)
+	return equal, nil
+}
+
+func (matcher *MatchYAMLMatcher) FailureMessage(actual interface{}) (message string) {
+	_, message, err := matcher.equal(matcher.YAMLToMatch, actual)
 	if err != nil {
-		return false, err
+		return err.Error()
+	}
+
+	return message
+}
+
+func (matcher *MatchYAMLMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+	actualString, _ := matcher.prettyPrint(actual)
+	expectedString, _ := matcher.prettyPrint(matcher.YAMLToMatch)
+	return format.Message(actualString, "not to match YAML of", expectedString)
+}
+
+func (matcher *MatchYAMLMatcher) equal(expected interface{}, actual interface{}) (bool, string, error) {
+	actualString, err := matcher.prettyPrint(actual)
+	if err != nil {
+		return false, "", err
+	}
+
+	expectedString, err := matcher.prettyPrint(expected)
+	if err != nil {
+		return false, "", err
 	}
 
 	var actualValue interface{}
@@ -35,19 +60,12 @@ func (matcher *MatchYAMLMatcher) Match(actual interface{}) (success bool, err er
 	candiedyaml.Unmarshal([]byte(actualString), &actualValue)
 	candiedyaml.Unmarshal([]byte(expectedString), &expectedValue)
 
-	return reflect.DeepEqual(actualValue, expectedValue), nil
-}
+	equal, err := DeepEqual(expectedValue, actualValue)
+	if err != nil {
+		return equal, err.Error(), nil
+	}
 
-func (matcher *MatchYAMLMatcher) FailureMessage(actual interface{}) (message string) {
-	actualString, _ := matcher.prettyPrint(actual)
-	expectedString, _ := matcher.prettyPrint(matcher.YAMLToMatch)
-	return format.Message(actualString, "to match YAML of", expectedString)
-}
-
-func (matcher *MatchYAMLMatcher) NegatedFailureMessage(actual interface{}) (message string) {
-	actualString, _ := matcher.prettyPrint(actual)
-	expectedString, _ := matcher.prettyPrint(matcher.YAMLToMatch)
-	return format.Message(actualString, "not to match YAML of", expectedString)
+	return equal, "", nil
 }
 
 func (matcher *MatchYAMLMatcher) prettyPrint(input interface{}) (formatted string, err error) {

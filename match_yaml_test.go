@@ -17,14 +17,14 @@ func (a animalStringer) String() string {
 }
 
 var _ = Describe("MatchYAMLMatcher", func() {
+	var animals, plants string
+
+	BeforeEach(func() {
+		animals = "- cats:\n  - lion\n- fish:\n  - salmon"
+		plants = "- tropical:\n  - palm\n- desert:\n  - cactus"
+	})
+
 	Describe("Match", func() {
-		var animals, plants string
-
-		BeforeEach(func() {
-			animals = "- cats:\n  - lion\n- fish:\n  - salmon"
-			plants = "- tropical:\n  - palm\n- desert:\n  - cactus"
-		})
-
 		It("works with complex yaml", func() {
 			yaml, err := ioutil.ReadFile("fixtures/santa_monica_correct.yml")
 			Expect(err).NotTo(HaveOccurred())
@@ -107,23 +107,29 @@ var _ = Describe("MatchYAMLMatcher", func() {
 	Describe("FailureMessage", func() {
 		It("returns a failure message", func() {
 			message := gomegamatchers.MatchYAML("a: 1").FailureMessage("b: 2")
-			Expect(message).To(ContainSubstring("Expected"))
-			Expect(message).To(ContainSubstring("<string>: b: 2"))
-			Expect(message).To(ContainSubstring("to match YAML of"))
-			Expect(message).To(ContainSubstring("<string>: a: 1"))
+			Expect(message).To(Equal(`error at map key "b": extra key found: expected [<string> b] not to contain key <string> b`))
 		})
 
-		It("unfortunately does not provide localized error information", func() {
+		It("provides localized error information", func() {
 			correctYAML, err := ioutil.ReadFile("fixtures/santa_monica_correct.yml")
 			Expect(err).NotTo(HaveOccurred())
 
 			incorrectYAML, err := ioutil.ReadFile("fixtures/santa_monica_incorrect.yml")
 			Expect(err).NotTo(HaveOccurred())
 
-			message := gomegamatchers.MatchYAML(correctYAML).FailureMessage(incorrectYAML)
+			message := gomegamatchers.MatchYAML(string(correctYAML)).FailureMessage(string(incorrectYAML))
+			Expect(message).To(SatisfyAny(
+				Equal(`error at map key "population": error at map key "1980": error at map key "absolute": value mismatch: expected <int64> 999999999 to equal <int64> 88314`),
+				Equal(`error at map key "population": error at map key "1990": error at map key "wrong_key": extra key found: expected [<string> growth_rate, <string> wrong_key] not to contain key <string> wrong_key`),
+				Equal(`error at map key "population": error at map key "2000": error at map key "absolute": type mismatch: expected <string> to be of type <int64>`),
+			))
+		})
 
-			unrelatedToFailure := "Classified as a Subtropical Mediterranean climate, Santa Monica enjoys an average"
-			Expect(message).To(ContainSubstring(unrelatedToFailure))
+		Describe("errors", func() {
+			It("returns the error as the message", func() {
+				message := gomegamatchers.MatchYAML(animals).FailureMessage("some: invalid: yaml")
+				Expect(message).To(ContainSubstring("mapping values are not allowed in this context"))
+			})
 		})
 	})
 
