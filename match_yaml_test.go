@@ -1,6 +1,8 @@
 package gomegamatchers_test
 
 import (
+	"io/ioutil"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/gomegamatchers"
@@ -21,6 +23,15 @@ var _ = Describe("MatchYAMLMatcher", func() {
 		BeforeEach(func() {
 			animals = "- cats:\n  - lion\n- fish:\n  - salmon"
 			plants = "- tropical:\n  - palm\n- desert:\n  - cactus"
+		})
+
+		It("works with complex yaml", func() {
+			yaml, err := ioutil.ReadFile("fixtures/santa_monica_correct.yml")
+			Expect(err).NotTo(HaveOccurred())
+
+			isMatch, err := gomegamatchers.MatchYAML(yaml).Match(yaml)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(isMatch).To(BeTrue())
 		})
 
 		Context("when arguments are strings", func() {
@@ -95,21 +106,34 @@ var _ = Describe("MatchYAMLMatcher", func() {
 
 	Describe("FailureMessage", func() {
 		It("returns a failure message", func() {
-			actualMessage := gomegamatchers.MatchYAML("a: 1").FailureMessage("b: 2")
-			Expect(actualMessage).To(ContainSubstring("Expected"))
-			Expect(actualMessage).To(ContainSubstring("<string>: b: 2"))
-			Expect(actualMessage).To(ContainSubstring("to match YAML of"))
-			Expect(actualMessage).To(ContainSubstring("<string>: a: 1"))
+			message := gomegamatchers.MatchYAML("a: 1").FailureMessage("b: 2")
+			Expect(message).To(ContainSubstring("Expected"))
+			Expect(message).To(ContainSubstring("<string>: b: 2"))
+			Expect(message).To(ContainSubstring("to match YAML of"))
+			Expect(message).To(ContainSubstring("<string>: a: 1"))
+		})
+
+		It("unfortunately does not provide localized error information", func() {
+			correctYAML, err := ioutil.ReadFile("fixtures/santa_monica_correct.yml")
+			Expect(err).NotTo(HaveOccurred())
+
+			incorrectYAML, err := ioutil.ReadFile("fixtures/santa_monica_incorrect.yml")
+			Expect(err).NotTo(HaveOccurred())
+
+			message := gomegamatchers.MatchYAML(correctYAML).FailureMessage(incorrectYAML)
+
+			unrelatedToFailure := "Classified as a Subtropical Mediterranean climate, Santa Monica enjoys an average"
+			Expect(message).To(ContainSubstring(unrelatedToFailure))
 		})
 	})
 
 	Describe("NegatedFailureMessage", func() {
 		It("returns a negated failure message", func() {
-			actualMessage := gomegamatchers.MatchYAML("a: 1").NegatedFailureMessage("b: 2")
-			Expect(actualMessage).To(ContainSubstring("Expected"))
-			Expect(actualMessage).To(ContainSubstring("<string>: b: 2"))
-			Expect(actualMessage).To(ContainSubstring("not to match YAML of"))
-			Expect(actualMessage).To(ContainSubstring("<string>: a: 1"))
+			message := gomegamatchers.MatchYAML("a: 1").NegatedFailureMessage("b: 2")
+			Expect(message).To(ContainSubstring("Expected"))
+			Expect(message).To(ContainSubstring("<string>: b: 2"))
+			Expect(message).To(ContainSubstring("not to match YAML of"))
+			Expect(message).To(ContainSubstring("<string>: a: 1"))
 		})
 	})
 })
