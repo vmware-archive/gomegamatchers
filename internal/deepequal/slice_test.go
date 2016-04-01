@@ -9,7 +9,15 @@ import (
 )
 
 var _ = Describe("Slice", func() {
-	It("returns an error when keys match but values do not", func() {
+	It("returns true when the lengths and values match", func() {
+		slice := reflect.ValueOf([]int{1, 2, 3, 4})
+
+		equal, err := deepequal.Slice(slice, slice)
+		Expect(equal).To(BeTrue())
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("returns an error when the lengths match but the values do not", func() {
 		expected := reflect.ValueOf([]int{1, 2, 3, 4})
 		actual := reflect.ValueOf([]int{1, 2, 0, 4})
 

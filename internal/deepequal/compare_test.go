@@ -29,6 +29,18 @@ var _ = Describe("Compare", func() {
 		"complex128": {complex128(1i), complex128(2i)},
 	}
 
+	It("returns true when the objects match", func() {
+		someObject := map[string]interface{}{
+			"a": 1,
+			"b": []int{1, 2, 3, 4},
+			"c": 3,
+		}
+
+		equal, err := deepequal.Compare(someObject, someObject)
+		Expect(equal).To(BeTrue())
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	Context("when the types are mismatched", func() {
 		It("returns an error", func() {
 			for expectedName, expectedValues := range types {
