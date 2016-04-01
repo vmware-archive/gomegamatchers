@@ -1,4 +1,4 @@
-package prettyprint_test
+package comparison_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestGomegaMatchers(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "internal/prettyprint")
+	RunSpecs(t, "internal/comparison")
 }

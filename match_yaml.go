@@ -6,6 +6,7 @@ import (
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/types"
+	"github.com/pivotal-cf-experimental/gomegamatchers/internal/comparison"
 )
 
 func MatchYAML(expected interface{}) types.GomegaMatcher {
@@ -60,7 +61,7 @@ func (matcher *MatchYAMLMatcher) equal(expected interface{}, actual interface{})
 	candiedyaml.Unmarshal([]byte(actualString), &actualValue)
 	candiedyaml.Unmarshal([]byte(expectedString), &expectedValue)
 
-	equal, err := DeepEqual(expectedValue, actualValue)
+	equal, err := comparison.DeepEqual(expectedValue, actualValue)
 	if err != nil {
 		return equal, err.Error(), nil
 	}

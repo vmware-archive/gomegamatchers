@@ -1,4 +1,4 @@
-package gomegamatchers
+package comparison
 
 import (
 	"fmt"

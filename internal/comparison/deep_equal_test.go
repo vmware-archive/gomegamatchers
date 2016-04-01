@@ -1,12 +1,11 @@
-package gomegamatchers_test
+package comparison_test
 
 import (
 	"fmt"
 
-	"github.com/pivotal-cf-experimental/gomegamatchers"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-cf-experimental/gomegamatchers/internal/comparison"
 )
 
 var _ = Describe("DeepEqual", func() {
@@ -36,7 +35,7 @@ var _ = Describe("DeepEqual", func() {
 				for actualName, actualValues := range types {
 					if expectedName != actualName {
 						errorMessage := fmt.Sprintf("type mismatch: expected <%s> to be of type <%s>", actualName, expectedName)
-						equal, err := gomegamatchers.DeepEqual(expectedValues[0], actualValues[0])
+						equal, err := comparison.DeepEqual(expectedValues[0], actualValues[0])
 						Expect(equal).To(BeFalse())
 						Expect(err).To(MatchError(errorMessage))
 					}
@@ -49,7 +48,7 @@ var _ = Describe("DeepEqual", func() {
 		It("returns an error", func() {
 			for name, values := range types {
 				errorMessage := fmt.Sprintf("value mismatch: expected <%s> %+v to equal <%s> %+v", name, values[1], name, values[0])
-				equal, err := gomegamatchers.DeepEqual(values[0], values[1])
+				equal, err := comparison.DeepEqual(values[0], values[1])
 				Expect(equal).To(BeFalse())
 				Expect(err).To(MatchError(errorMessage))
 			}
@@ -61,7 +60,7 @@ var _ = Describe("DeepEqual", func() {
 			expected := []int{1, 2, 3, 4}
 			actual := []int{1, 2, 0, 4}
 
-			equal, err := gomegamatchers.DeepEqual(expected, actual)
+			equal, err := comparison.DeepEqual(expected, actual)
 			Expect(equal).To(BeFalse())
 			Expect(err).To(MatchError("error at slice index 2: value mismatch: expected <int> 0 to equal <int> 3"))
 		})
@@ -70,7 +69,7 @@ var _ = Describe("DeepEqual", func() {
 			expected := []int{1, 2}
 			actual := []int{1, 2, 3, 4}
 
-			equal, err := gomegamatchers.DeepEqual(expected, actual)
+			equal, err := comparison.DeepEqual(expected, actual)
 			Expect(equal).To(BeFalse())
 			Expect(err).To(MatchError("error at slice index 2: extra elements found: expected [<int> 1, <int> 2, <int> 3, <int> 4] not to contain elements [<int> 3, <int> 4]"))
 		})
@@ -79,7 +78,7 @@ var _ = Describe("DeepEqual", func() {
 			expected := []int{1, 2, 3, 4}
 			actual := []int{1, 2}
 
-			equal, err := gomegamatchers.DeepEqual(expected, actual)
+			equal, err := comparison.DeepEqual(expected, actual)
 			Expect(equal).To(BeFalse())
 			Expect(err).To(MatchError("error at slice index 2: missing elements: expected [<int> 1, <int> 2] to contain elements [<int> 3, <int> 4]"))
 		})
@@ -90,7 +89,7 @@ var _ = Describe("DeepEqual", func() {
 			expected := map[string]int{"a": 1, "b": 2, "c": 3}
 			actual := map[string]int{"c": 3, "b": 2, "a": 1}
 
-			equal, _ := gomegamatchers.DeepEqual(expected, actual)
+			equal, _ := comparison.DeepEqual(expected, actual)
 			Expect(equal).To(BeTrue())
 		})
 
@@ -98,7 +97,7 @@ var _ = Describe("DeepEqual", func() {
 			expected := map[string]int{"a": 1, "b": 2, "c": 3}
 			actual := map[string]int{"a": 1, "b": 0, "c": 3}
 
-			equal, err := gomegamatchers.DeepEqual(expected, actual)
+			equal, err := comparison.DeepEqual(expected, actual)
 			Expect(equal).To(BeFalse())
 			Expect(err).To(MatchError(`error at map key "b": value mismatch: expected <int> 0 to equal <int> 2`))
 		})
@@ -107,7 +106,7 @@ var _ = Describe("DeepEqual", func() {
 			expected := map[string]int{"a": 1}
 			actual := map[string]int{"a": 1, "b": 2}
 
-			equal, err := gomegamatchers.DeepEqual(expected, actual)
+			equal, err := comparison.DeepEqual(expected, actual)
 			Expect(equal).To(BeFalse())
 			Expect(err).To(SatisfyAny(
 				MatchError(`error at map key "b": extra key found: expected [<string> a, <string> b] not to contain key <string> b`),
@@ -119,7 +118,7 @@ var _ = Describe("DeepEqual", func() {
 			expected := map[string]int{"a": 1, "b": 2}
 			actual := map[string]int{"a": 1}
 
-			equal, err := gomegamatchers.DeepEqual(expected, actual)
+			equal, err := comparison.DeepEqual(expected, actual)
 			Expect(equal).To(BeFalse())
 			Expect(err).To(MatchError(`error at map key "b": missing key: expected [<string> a] to contain key <string> b`))
 		})
@@ -138,7 +137,7 @@ var _ = Describe("DeepEqual", func() {
 				"c": 3,
 			}
 
-			equal, err := gomegamatchers.DeepEqual(expected, actual)
+			equal, err := comparison.DeepEqual(expected, actual)
 			Expect(equal).To(BeFalse())
 			Expect(err).To(MatchError(`error at map key "b": error at slice index 2: value mismatch: expected <int> 0 to equal <int> 3`))
 		})
