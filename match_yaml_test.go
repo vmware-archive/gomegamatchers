@@ -121,6 +121,7 @@ var _ = Describe("MatchYAMLMatcher", func() {
 			Expect(message).To(SatisfyAny(
 				Equal(`error at map key "population": error at map key "1980": error at map key "absolute": value mismatch: expected <int64> 999999999 to equal <int64> 88314`),
 				Equal(`error at map key "population": error at map key "1990": error at map key "wrong_key": extra key found: expected [<string> growth_rate, <string> wrong_key] not to contain key <string> wrong_key`),
+				Equal(`error at map key "population": error at map key "1990": error at map key "wrong_key": extra key found: expected [<string> wrong_key, <string> growth_rate] not to contain key <string> wrong_key`),
 				Equal(`error at map key "population": error at map key "2000": error at map key "absolute": type mismatch: expected <string> to be of type <int64>`),
 			))
 		})

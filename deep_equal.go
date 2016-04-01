@@ -3,7 +3,8 @@ package gomegamatchers
 import (
 	"fmt"
 	"reflect"
-	"strings"
+
+	"github.com/pivotal-cf-experimental/gomegamatchers/internal/prettyprint"
 )
 
 func DeepEqual(expected interface{}, actual interface{}) (bool, error) {
@@ -33,8 +34,8 @@ func deepEqualSlice(expectedSlice reflect.Value, actualSlice reflect.Value) (boo
 			return false, sliceError{
 				index: i,
 				err: fmt.Errorf("extra elements found: expected %s not to contain elements %s",
-					prettyPrintValueSlice(actualSlice),
-					prettyPrintValueSlice(actualSlice.Slice(i, actualSlice.Len())),
+					prettyprint.SliceAsValue(actualSlice),
+					prettyprint.SliceAsValue(actualSlice.Slice(i, actualSlice.Len())),
 				),
 			}
 		}
@@ -52,8 +53,8 @@ func deepEqualSlice(expectedSlice reflect.Value, actualSlice reflect.Value) (boo
 		return false, sliceError{
 			index: actualSlice.Len(),
 			err: fmt.Errorf("missing elements: expected %s to contain elements %s",
-				prettyPrintValueSlice(actualSlice),
-				prettyPrintValueSlice(expectedSlice.Slice(actualSlice.Len(), expectedSlice.Len())),
+				prettyprint.SliceAsValue(actualSlice),
+				prettyprint.SliceAsValue(expectedSlice.Slice(actualSlice.Len(), expectedSlice.Len())),
 			),
 		}
 	}
@@ -67,7 +68,7 @@ func deepEqualMap(expectedMap reflect.Value, actualMap reflect.Value) (bool, err
 			return false, mapError{
 				key: key.Interface(),
 				err: fmt.Errorf("extra key found: expected %s not to contain key <%T> %+v",
-					prettyPrintSlice(actualMap.MapKeys()), key.Interface(),
+					prettyprint.SliceOfValues(actualMap.MapKeys()), key.Interface(),
 					key,
 				),
 			}
@@ -87,7 +88,7 @@ func deepEqualMap(expectedMap reflect.Value, actualMap reflect.Value) (bool, err
 			return false, mapError{
 				key: key.Interface(),
 				err: fmt.Errorf("missing key: expected %s to contain key <%T> %+v",
-					prettyPrintSlice(actualMap.MapKeys()), key.Interface(),
+					prettyprint.SliceOfValues(actualMap.MapKeys()), key.Interface(),
 					key,
 				),
 			}
@@ -104,27 +105,6 @@ func deepEqualPrimitive(expectedPrimitive interface{}, actualPrimitive interface
 	}
 
 	return true, nil
-}
-
-func prettyPrintValueSlice(values reflect.Value) string {
-	var prettyPrintedValues []string
-
-	for i := 0; i < values.Len(); i++ {
-		prettyPrintedValues = append(prettyPrintedValues,
-			fmt.Sprintf("<%T> %+v", values.Index(i).Interface(), values.Index(i)))
-	}
-
-	return "[" + strings.Join(prettyPrintedValues, ", ") + "]"
-}
-
-func prettyPrintSlice(values []reflect.Value) string {
-	var prettyPrintedValues []string
-
-	for _, value := range values {
-		prettyPrintedValues = append(prettyPrintedValues, fmt.Sprintf("<%T> %+v", value.Interface(), value))
-	}
-
-	return "[" + strings.Join(prettyPrintedValues, ", ") + "]"
 }
 
 type sliceError struct {
