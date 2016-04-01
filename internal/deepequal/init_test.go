@@ -1,4 +1,4 @@
-package comparison_test
+package deepequal_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestGomegaMatchers(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "internal/comparison")
+	RunSpecs(t, "internal/deepequal")
 }
