@@ -7,6 +7,7 @@ import (
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/types"
 	"github.com/pivotal-cf-experimental/gomegamatchers/internal/deepequal"
+	"github.com/pivotal-cf-experimental/gomegamatchers/internal/prettyprint"
 )
 
 func MatchYAML(expected interface{}) types.GomegaMatcher {
@@ -61,12 +62,9 @@ func (matcher *MatchYAMLMatcher) equal(expected interface{}, actual interface{})
 	candiedyaml.Unmarshal([]byte(actualString), &actualValue)
 	candiedyaml.Unmarshal([]byte(expectedString), &expectedValue)
 
-	equal, err := deepequal.Compare(expectedValue, actualValue)
-	if err != nil {
-		return equal, err.Error(), nil
-	}
+	equal, difference := deepequal.Compare(expectedValue, actualValue)
 
-	return equal, "", nil
+	return equal, prettyprint.ExpectationFailure(difference), nil
 }
 
 func (matcher *MatchYAMLMatcher) prettyPrint(input interface{}) (formatted string, err error) {

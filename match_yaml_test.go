@@ -107,7 +107,12 @@ var _ = Describe("MatchYAMLMatcher", func() {
 	Describe("FailureMessage", func() {
 		It("returns a failure message", func() {
 			message := gomegamatchers.MatchYAML("a: 1").FailureMessage("b: 2")
-			Expect(message).To(Equal(`error at map key "b": extra key found: expected [<string> b] not to contain key <string> b`))
+			Expect(message).To(ContainSubstring("error at :"))
+			Expect(message).To(ContainSubstring("  extra key found:"))
+			Expect(message).To(ContainSubstring("    Expected"))
+			Expect(message).To(ContainSubstring("        [<string> b]"))
+			Expect(message).To(ContainSubstring("    not to contain key"))
+			Expect(message).To(ContainSubstring("        <string> b"))
 		})
 
 		It("provides localized error information", func() {
@@ -118,12 +123,41 @@ var _ = Describe("MatchYAMLMatcher", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			message := gomegamatchers.MatchYAML(string(correctYAML)).FailureMessage(string(incorrectYAML))
-			Expect(message).To(SatisfyAny(
-				Equal(`error at map key "population": error at map key "1980": error at map key "absolute": value mismatch: expected <int64> 999999999 to equal <int64> 88314`),
-				Equal(`error at map key "population": error at map key "1990": error at map key "wrong_key": extra key found: expected [<string> growth_rate, <string> wrong_key] not to contain key <string> wrong_key`),
-				Equal(`error at map key "population": error at map key "1990": error at map key "wrong_key": extra key found: expected [<string> wrong_key, <string> growth_rate] not to contain key <string> wrong_key`),
-				Equal(`error at map key "population": error at map key "2000": error at map key "absolute": type mismatch: expected <string> to be of type <int64>`),
-			))
+			Expect(message).To(
+				SatisfyAny(
+					SatisfyAll(
+						ContainSubstring("error at [population][1980][absolute]:"),
+						ContainSubstring("  value mismatch:"),
+						ContainSubstring("    Expected"),
+						ContainSubstring("        <int64> 999999999"),
+						ContainSubstring("    to equal"),
+						ContainSubstring("        <int64> 88314"),
+					),
+					SatisfyAll(
+						ContainSubstring("error at [population][2000][absolute]:"),
+						ContainSubstring("  type mismatch:"),
+						ContainSubstring("    Expected"),
+						ContainSubstring("        <string> wrong type"),
+						ContainSubstring("    to be of type"),
+						ContainSubstring("        <int64>"),
+					),
+					SatisfyAll(
+						ContainSubstring("error at [population][1990]:"),
+						ContainSubstring("  extra key found:"),
+						ContainSubstring("    Expected"),
+						ContainSubstring("        [<string> growth_rate, <string> wrong_key]"),
+						ContainSubstring("    not to contain key"),
+						ContainSubstring("        <string> wrong_key"),
+					),
+					SatisfyAll(
+						ContainSubstring("error at [population][1990]:"),
+						ContainSubstring("  extra key found:"),
+						ContainSubstring("    Expected"),
+						ContainSubstring("        [<string> wrong_key, <string> growth_rate]"),
+						ContainSubstring("    not to contain key"),
+						ContainSubstring("        <string> wrong_key"),
+					),
+				))
 		})
 
 		Describe("errors", func() {

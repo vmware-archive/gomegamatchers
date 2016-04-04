@@ -1,11 +1,12 @@
 package deepequal_test
 
 import (
-	"fmt"
+	"reflect"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf-experimental/gomegamatchers/internal/deepequal"
+	"github.com/pivotal-cf-experimental/gomegamatchers/internal/diff"
 )
 
 var _ = Describe("Compare", func() {
@@ -36,53 +37,63 @@ var _ = Describe("Compare", func() {
 			"c": 3,
 		}
 
-		equal, err := deepequal.Compare(someObject, someObject)
+		equal, difference := deepequal.Compare(someObject, someObject)
 		Expect(equal).To(BeTrue())
-		Expect(err).NotTo(HaveOccurred())
+		Expect(difference).To(Equal(diff.NoDifference{}))
 	})
 
-	Context("when the types are mismatched", func() {
-		It("returns an error", func() {
-			for expectedName, expectedValues := range types {
-				for actualName, actualValues := range types {
-					if expectedName != actualName {
-						errorMessage := fmt.Sprintf("type mismatch: expected <%s> to be of type <%s>", actualName, expectedName)
-						equal, err := deepequal.Compare(expectedValues[0], actualValues[0])
-						Expect(equal).To(BeFalse())
-						Expect(err).To(MatchError(errorMessage))
-					}
+	It("returns a diff when the types are mismatched", func() {
+		for expectedName, expectedValues := range types {
+			for actualName, actualValues := range types {
+				if expectedName != actualName {
+					equal, difference := deepequal.Compare(expectedValues[0], actualValues[0])
+
+					Expect(equal).To(BeFalse())
+					Expect(difference).To(Equal(diff.PrimitiveTypeMismatch{
+						ExpectedType: reflect.TypeOf(expectedValues[0]),
+						ActualValue:  actualValues[0],
+					}))
 				}
 			}
-		})
+		}
 	})
 
-	Context("when the values are mismatched", func() {
-		It("returns an error", func() {
-			for name, values := range types {
-				errorMessage := fmt.Sprintf("value mismatch: expected <%s> %+v to equal <%s> %+v", name, values[1], name, values[0])
-				equal, err := deepequal.Compare(values[0], values[1])
-				Expect(equal).To(BeFalse())
-				Expect(err).To(MatchError(errorMessage))
-			}
-		})
-	})
+	It("returns a diff when the values are mismatched", func() {
+		for _, values := range types {
+			equal, difference := deepequal.Compare(values[0], values[1])
 
-	Context("when comparing complex objects", func() {
-		It("references a path indicating the location of the error", func() {
-			expected := map[string]interface{}{
-				"a": 1,
-				"b": []int{1, 2, 3, 4},
-				"c": 3,
-			}
-			actual := map[string]interface{}{
-				"a": 1,
-				"b": []int{1, 2, 0, 4},
-				"c": 3,
-			}
-
-			equal, err := deepequal.Compare(expected, actual)
 			Expect(equal).To(BeFalse())
-			Expect(err).To(MatchError(`error at map key "b": error at slice index 2: value mismatch: expected <int> 0 to equal <int> 3`))
-		})
+			Expect(difference).To(Equal(diff.PrimitiveValueMismatch{
+				ExpectedValue: values[0],
+				ActualValue:   values[1],
+			}))
+		}
+	})
+
+	It("returns a nested diff when comparing nested objects", func() {
+		expected := map[string]interface{}{
+			"a": 1,
+			"b": []int{1, 2, 3, 4},
+			"c": 3,
+		}
+		actual := map[string]interface{}{
+			"a": 1,
+			"b": []int{1, 2, 0, 4},
+			"c": 3,
+		}
+
+		equal, difference := deepequal.Compare(expected, actual)
+
+		Expect(equal).To(BeFalse())
+		Expect(difference).To(Equal(diff.MapNested{
+			Key: "b",
+			NestedDifference: diff.SliceNested{
+				Index: 2,
+				NestedDifference: diff.PrimitiveValueMismatch{
+					ExpectedValue: 3,
+					ActualValue:   0,
+				},
+			},
+		}))
 	})
 })

@@ -1,44 +1,37 @@
 package deepequal
 
 import (
-	"fmt"
 	"reflect"
 
-	"github.com/pivotal-cf-experimental/gomegamatchers/internal/prettyprint"
+	"github.com/pivotal-cf-experimental/gomegamatchers/internal/diff"
 )
 
-func Map(expectedMap reflect.Value, actualMap reflect.Value) (bool, error) {
+func Map(expectedMap reflect.Value, actualMap reflect.Value) (bool, diff.Difference) {
 	for _, key := range actualMap.MapKeys() {
 		if expectedMap.MapIndex(key).Kind() == reflect.Invalid {
-			return false, mapError{
-				key: key.Interface(),
-				err: fmt.Errorf("extra key found: expected %s not to contain key <%T> %+v",
-					prettyprint.SliceOfValues(actualMap.MapKeys()), key.Interface(),
-					key,
-				),
+			return false, diff.MapExtraKey{
+				ExtraKey: key.Interface(),
+				AllKeys:  actualMap.MapKeys(),
 			}
 		}
 
-		equal, err := Compare(expectedMap.MapIndex(key).Interface(), actualMap.MapIndex(key).Interface())
+		equal, difference := Compare(expectedMap.MapIndex(key).Interface(), actualMap.MapIndex(key).Interface())
 		if !equal {
-			return false, mapError{
-				key: key.Interface(),
-				err: err,
+			return false, diff.MapNested{
+				Key:              key.Interface(),
+				NestedDifference: difference,
 			}
 		}
 	}
 
 	for _, key := range expectedMap.MapKeys() {
 		if actualMap.MapIndex(key).Kind() == reflect.Invalid {
-			return false, mapError{
-				key: key.Interface(),
-				err: fmt.Errorf("missing key: expected %s to contain key <%T> %+v",
-					prettyprint.SliceOfValues(actualMap.MapKeys()), key.Interface(),
-					key,
-				),
+			return false, diff.MapMissingKey{
+				MissingKey: key.Interface(),
+				AllKeys:    actualMap.MapKeys(),
 			}
 		}
 	}
 
-	return true, nil
+	return true, diff.NoDifference{}
 }

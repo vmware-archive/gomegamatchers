@@ -1,42 +1,35 @@
 package deepequal
 
 import (
-	"fmt"
 	"reflect"
 
-	"github.com/pivotal-cf-experimental/gomegamatchers/internal/prettyprint"
+	"github.com/pivotal-cf-experimental/gomegamatchers/internal/diff"
 )
 
-func Slice(expectedSlice reflect.Value, actualSlice reflect.Value) (bool, error) {
+func Slice(expectedSlice reflect.Value, actualSlice reflect.Value) (bool, diff.Difference) {
 	for i := 0; i < actualSlice.Len(); i++ {
 		if i >= expectedSlice.Len() {
-			return false, sliceError{
-				index: i,
-				err: fmt.Errorf("extra elements found: expected %s not to contain elements %s",
-					prettyprint.SliceAsValue(actualSlice),
-					prettyprint.SliceAsValue(actualSlice.Slice(i, actualSlice.Len())),
-				),
+			return false, diff.SliceExtraElements{
+				ExtraElements: actualSlice.Slice(i, actualSlice.Len()),
+				AllElements:   actualSlice,
 			}
 		}
 
-		equal, err := Compare(expectedSlice.Index(i).Interface(), actualSlice.Index(i).Interface())
+		equal, difference := Compare(expectedSlice.Index(i).Interface(), actualSlice.Index(i).Interface())
 		if !equal {
-			return false, sliceError{
-				index: i,
-				err:   err,
+			return false, diff.SliceNested{
+				Index:            i,
+				NestedDifference: difference,
 			}
 		}
 	}
 
 	if expectedSlice.Len() > actualSlice.Len() {
-		return false, sliceError{
-			index: actualSlice.Len(),
-			err: fmt.Errorf("missing elements: expected %s to contain elements %s",
-				prettyprint.SliceAsValue(actualSlice),
-				prettyprint.SliceAsValue(expectedSlice.Slice(actualSlice.Len(), expectedSlice.Len())),
-			),
+		return false, diff.SliceMissingElements{
+			MissingElements: expectedSlice.Slice(actualSlice.Len(), expectedSlice.Len()),
+			AllElements:     actualSlice,
 		}
 	}
 
-	return true, nil
+	return true, diff.NoDifference{}
 }

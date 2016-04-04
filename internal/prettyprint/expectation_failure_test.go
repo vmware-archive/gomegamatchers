@@ -22,12 +22,17 @@ var _ = Describe("ExpectationFailure", func() {
 			},
 		})
 
-		Expect(failure).To(ContainSubstring("error at colors[2]:"))
+		Expect(failure).To(ContainSubstring("error at [colors][2]:"))
 		Expect(failure).To(ContainSubstring("  value mismatch:"))
 		Expect(failure).To(ContainSubstring("    Expected"))
 		Expect(failure).To(ContainSubstring("        <string> red"))
 		Expect(failure).To(ContainSubstring("    to equal"))
 		Expect(failure).To(ContainSubstring("        <string> blue"))
+	})
+
+	It("returns an empty string when there is no difference", func() {
+		failure := prettyprint.ExpectationFailure(diff.NoDifference{})
+		Expect(failure).To(Equal("error at "))
 	})
 
 	Context("when printing primitives", func() {
@@ -70,7 +75,7 @@ var _ = Describe("ExpectationFailure", func() {
 				},
 			})
 
-			Expect(failure).To(ContainSubstring("error at age:"))
+			Expect(failure).To(ContainSubstring("error at [age]:"))
 			Expect(failure).To(ContainSubstring("  value mismatch:"))
 			Expect(failure).To(ContainSubstring("    Expected"))
 			Expect(failure).To(ContainSubstring("        <int> 12"))

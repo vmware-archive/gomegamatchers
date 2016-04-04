@@ -12,6 +12,8 @@ func ExpectationFailure(difference diff.Difference) string {
 
 func anyFailure(difference diff.Difference) string {
 	switch difference := difference.(type) {
+	case diff.NoDifference:
+		return ""
 	case diff.MapNested:
 		return mapNestedFailure(difference)
 
@@ -42,7 +44,7 @@ func anyFailure(difference diff.Difference) string {
 }
 
 func mapNestedFailure(difference diff.MapNested) string {
-	return fmt.Sprintf("%+v%s", difference.Key, anyFailure(difference.NestedDifference))
+	return fmt.Sprintf("[%+v]%s", difference.Key, anyFailure(difference.NestedDifference))
 }
 
 func mapMissingKeyFailure(difference diff.MapMissingKey) string {
