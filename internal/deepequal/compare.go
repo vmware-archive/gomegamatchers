@@ -11,8 +11,7 @@ func Compare(expected interface{}, actual interface{}) (bool, diff.Difference) {
 	actualValue := reflect.ValueOf(actual)
 
 	if expected == nil && actual == nil {
-		equal := expected == actual
-		if equal {
+		if expected == actual {
 			return true, diff.NoDifference{}
 		}
 	}
