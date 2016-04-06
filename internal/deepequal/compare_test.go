@@ -97,6 +97,16 @@ var _ = Describe("Compare", func() {
 		}))
 	})
 
+	Context("when both are nil", func() {
+		It("returns true", func() {
+			var expected interface{}
+			var actual interface{}
+
+			equal, _ := deepequal.Compare(expected, actual)
+			Expect(equal).To(BeTrue())
+		})
+	})
+
 	Context("when actual is nil", func() {
 		It("does not panic", func() {
 			expected := map[string]interface{}{}
