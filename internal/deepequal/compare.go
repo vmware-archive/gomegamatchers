@@ -10,6 +10,17 @@ func Compare(expected interface{}, actual interface{}) (bool, diff.Difference) {
 	expectedValue := reflect.ValueOf(expected)
 	actualValue := reflect.ValueOf(actual)
 
+	if !actualValue.IsValid() {
+		return false, diff.PrimitiveTypeMismatch{
+			ExpectedType: expectedValue.Type(),
+			ActualValue:  actual,
+		}
+	}
+
+	if !expectedValue.IsValid() {
+		return false, nil
+	}
+
 	if expectedValue.Type() != actualValue.Type() {
 		return false, diff.PrimitiveTypeMismatch{
 			ExpectedType: expectedValue.Type(),

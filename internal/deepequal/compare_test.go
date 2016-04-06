@@ -96,4 +96,31 @@ var _ = Describe("Compare", func() {
 			},
 		}))
 	})
+
+	Context("when actual is nil", func() {
+		It("does not panic", func() {
+			expected := map[string]interface{}{}
+			var actual interface{}
+
+			equal, difference := deepequal.Compare(expected, actual)
+
+			Expect(equal).To(BeFalse())
+			Expect(difference).To(Equal(diff.PrimitiveTypeMismatch{
+				ExpectedType: reflect.TypeOf(expected),
+				ActualValue:  nil,
+			}))
+		})
+	})
+
+	Context("when expected is nil", func() {
+		It("does not panic", func() {
+			var expected interface{}
+			actual := map[string]interface{}{}
+
+			equal, difference := deepequal.Compare(expected, actual)
+
+			Expect(equal).To(BeFalse())
+			Expect(difference).To(BeNil())
+		})
+	})
 })
